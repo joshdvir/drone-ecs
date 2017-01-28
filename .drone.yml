@@ -1,18 +1,14 @@
 build:
-  image: golang:1.5
+  image: golang:1.6
   environment:
     - CGO_ENABLED=0
     - GOPATH=/drone
   commands:
-    - make deps
     - make vet
     - make build
     - make test
 
 publish:
-  coverage:
-    when:
-      branch: master
   docker:
     username: $$DOCKER_USER
     password: $$DOCKER_PASS
@@ -29,7 +25,6 @@ publish:
     tag: latest
     when:
       branch: release/0.4
-      event: push
 
 plugin:
   name: ECS
