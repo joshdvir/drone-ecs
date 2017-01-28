@@ -84,8 +84,18 @@ func main() {
 		fmt.Printf("Cluster: %s\n", vargs.Cluster)
 	}
 
+	if len(vargs.ContainerName) == 0 {
+		vargs.ContainerName = vargs.Family + "-container"
+	}
+
 	if vargs.Memory == 0 {
 		vargs.Memory = 128
+	}
+
+	if vargs.LogOptions.Len() > 0 && len(vargs.LogDriver) == 0 {
+		fmt.Println("Please provide a log driver name along with log options")
+		os.Exit(1)
+		return
 	}
 
 	svc := ecs.New(
@@ -112,7 +122,7 @@ func main() {
 		Links:        []*string{},
 		Memory:       aws.Int64(vargs.Memory),
 		MountPoints:  []*ecs.MountPoint{},
-		Name:         aws.String(vargs.Family + "-container"),
+		Name:         aws.String(vargs.ContainerName),
 		PortMappings: []*ecs.PortMapping{},
 
 		Ulimits: []*ecs.Ulimit{},
@@ -156,6 +166,27 @@ func main() {
 		}
 		definition.Environment = append(definition.Environment, &pair)
 	}
+
+	// DockerLabels
+	for _, label := range vargs.DockerLabels.Slice() {
+		parts := strings.SplitN(label, "=", 2)
+		definition.DockerLabels[strings.Trim(parts[0], " ")] = aws.String(strings.Trim(parts[1], " "))
+	}
+	// LogOptions
+	if len(vargs.LogDriver) > 0 {
+		definition.LogConfiguration = new(ecs.LogConfiguration)
+		definition.LogConfiguration.LogDriver = &vargs.LogDriver
+		if vargs.LogOptions.Len() > 0 {
+			definition.LogConfiguration.Options = make(map[string]*string)
+			for _, logOption := range vargs.LogOptions.Slice() {
+				parts := strings.SplitN(logOption, "=", 2)
+				logOptionKey := strings.Trim(parts[0], " ")
+				logOptionValue := aws.String(strings.Trim(parts[1], " "))
+				definition.LogConfiguration.Options[logOptionKey] = logOptionValue
+			}
+		}
+	}
+
 	params := &ecs.RegisterTaskDefinitionInput{
 		ContainerDefinitions: []*ecs.ContainerDefinition{
 			&definition,
