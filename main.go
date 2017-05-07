@@ -187,6 +187,47 @@ func main() {
 		}
 	}
 
+	// Ulimits
+	if vargs.Ulimits.Len() > 0 {
+		ulimits := []*ecs.Ulimit{}
+		for _, cfgUlimit := range vargs.Ulimits.Slice() {
+			parts := strings.Split(cfgUlimit, "=")
+			if len(parts) != 2 {
+				fmt.Printf("%s", cfgUlimit)
+			}
+
+			limits := strings.Split(parts[1], ":")
+			var softLimit, hardLimit int64
+			var limitErr error
+			switch len(limits) {
+			case 1: // Format TYPE=SOFT-LIMIT Example- nofile=1024
+				softLimit, limitErr = strconv.ParseInt(limits[0], 10, 64)
+				hardLimit = softLimit
+			case 2: // Format TYPE=SOFT-LIMIT:HARD-LIMIT Example nofile=1024:1024
+				softLimit, limitErr = strconv.ParseInt(limits[0], 10, 64)
+				hardLimit, limitErr = strconv.ParseInt(limits[1], 10, 64)
+			default:
+				fmt.Printf("%s", cfgUlimit)
+			}
+
+			if limitErr != nil {
+				fmt.Printf("Could not convert limits into integers in ulimits[%s]. Error=[%v]", cfgUlimit, limitErr)
+			}
+
+			ulimit := &ecs.Ulimit{
+				Name:      aws.String(parts[0]),
+				SoftLimit: aws.Int64(softLimit),
+				HardLimit: aws.Int64(hardLimit),
+			}
+
+			ulimits = append(ulimits, ulimit)
+		}
+
+		definition.Ulimits = ulimits
+	}
+
+	fmt.Println(definition)
+
 	params := &ecs.RegisterTaskDefinitionInput{
 		ContainerDefinitions: []*ecs.ContainerDefinition{
 			&definition,

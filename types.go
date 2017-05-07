@@ -20,4 +20,5 @@ type Params struct {
 	DockerLabels  drone.StringSlice `json:"docker_labels"`
 	LogDriver     string            `json:"log_driver"`
 	LogOptions    drone.StringSlice `json:"log_options"`
+	Ulimits       drone.StringSlice `json:"ulimits"`
 }

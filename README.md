@@ -66,6 +66,10 @@ make deps build
           "awslogs-group=test",
           "awslogs-region=us-east-1"
         ],
+        "ulimits": [
+          "nofile=1024:1024",
+          "nproc=65535"
+        ],
         "docker_labels": [
           "test=yes"
         ]
@@ -133,6 +137,10 @@ docker run -i plugins/drone-ecs <<EOF
         "log_options": [
           "awslogs-group=test",
           "awslogs-region=us-east-1"
+        ],
+        "ulimits": [
+          "nofile=1024:1024",
+          "nproc=65535"
         ],
         "docker_labels": [
           "test=yes"
